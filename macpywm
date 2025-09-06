@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/Library/Developer/CommandLineTools/usr/bin/python3
 #
 # A simple but extensible window manager for macOS.
 # Copyright (c) 2021, Hiroyuki Ohsaki.
@@ -35,6 +35,10 @@ FRAME_WIDTH = 0
 Y_OFFSET = 0
 
 TERMINAL_REGEXP = r'(Terminal|ターミナル|Alacritty)'
+
+# remove zoom app
+ZOOM_APP_RE = re.compile(r'^(zoom\.us|Zoom|Zoom Workplace)$', re.I)
+
 
 LAYOUT_OFFSET = 0
 # Regexp: [x, y, width, height]
@@ -101,16 +105,29 @@ def error(fmt, *args):
 # Named-tuple for simulating Xlib.protocol.rq.Struct object.
 Geometry = namedtuple('Geometry', ['x', 'y', 'width', 'height'])
 
+
 class WindowManager():
     def __init__(self):
         # Fetch information on all available windows.
         output = subprocess.getoutput('yabai -m query --windows')
         self.properties = {elem['id']: elem for elem in json.loads(output)}
-        self.managed_windows = self.properties.keys()
-        self.exposed_windows = [
-            w for w, elem in self.properties.items() if elem['is-visible']
+
+        # After excluding Zoom here, create the “managed array.”
+        def _is_ignored(win_id: int) -> bool:
+            try:
+                app = self.properties[win_id]['app']
+            except KeyError:
+                return False
+            return bool(ZOOM_APP_RE.match(app))
+
+        self.ignored_windows  = [w for w in self.properties.keys() if _is_ignored(w)]
+        self.managed_windows  = [w for w in self.properties.keys() if not _is_ignored(w)]
+        self.exposed_windows  = [
+            w for w, elem in self.properties.items()
+            if elem.get('is-visible') and not _is_ignored(w)
         ]
 
+        
     # ---------------- Yabai wrapper functions.
     def get_window_class(self, window):
         """Fetch the property of the window WINDOW and return the application
