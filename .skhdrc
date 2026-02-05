@@ -8,6 +8,8 @@ ctrl + alt - 0x27 : macpywm maximize_window
 ctrl + alt - 0x29 : macpywm vertically_maximize_window
 ctrl + alt - z : yabai -m window --close
 ctrl + alt - y : yabai -m window --minimize
+ctrl + alt - n : macpywm space_next
+ctrl + alt - p : macpywm space_prev
 
 # Shortcut keys for invoking applications.
 ctrl + alt - 1 : open -n -a /System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal

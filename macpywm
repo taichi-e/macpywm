@@ -415,12 +415,32 @@ class WindowManager():
     def cb_maximize_window_vertically(self, window):
         self.cb_maximize_window(window, horizontally=False)
 
+    def focus_next_space(self, *args):
+        """次のスペースにフォーカスを移動する (Ctrl+Right をシミュレート)"""
+        script = '''
+        tell application "System Events"
+            key code 124 using control down
+        end tell
+        '''
+        subprocess.run(['osascript', '-e', script])
+
+    def focus_prev_space(self, *args):
+        """前のスペースにフォーカスを移動する (Ctrl+Left をシミュレート)"""
+        script = '''
+        tell application "System Events"
+            key code 123 using control down
+        end tell
+        '''
+        subprocess.run(['osascript', '-e', script])
+
 CMDTBL = [
     (r'^f', 'focus_next_window'),
     (r'^l', 'layout_all_windows'),
     (r'^t', 'tile_all_windows'),
     (r'^m', 'cb_maximize_window'),
     (r'^v', 'cb_maximize_window_vertically'),
+    (r'^sn|^space_next', 'focus_next_space'),
+    (r'^sp|^space_prev', 'focus_prev_space'),
 ]
 
 def main():
