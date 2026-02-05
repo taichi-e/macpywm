@@ -43,6 +43,9 @@ Emacs; i.e., if there are three windows, say, Emacs and two terminals,
 Emacs will occupy the half of the screen, and each terminal will have
 the quarter of the screen.
 
+**macpywm** operates on the currently focused virtual desktop (space).
+Window layout and tiling commands only affect windows in the current space.
+
 # OPTIONS
 
 None
