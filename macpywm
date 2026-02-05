@@ -415,12 +415,96 @@ class WindowManager():
     def cb_maximize_window_vertically(self, window):
         self.cb_maximize_window(window, horizontally=False)
 
+    def focus_next_space(self, *args):
+        """次のスペースにフォーカスを移動する (Ctrl+Right をシミュレート)"""
+        script = '''
+        tell application "System Events"
+            key code 124 using control down
+        end tell
+        '''
+        subprocess.run(['osascript', '-e', script])
+
+    def focus_prev_space(self, *args):
+        """前のスペースにフォーカスを移動する (Ctrl+Left をシミュレート)"""
+        script = '''
+        tell application "System Events"
+            key code 123 using control down
+        end tell
+        '''
+        subprocess.run(['osascript', '-e', script])
+
+    def focus_next_display(self, *args):
+        """次のディスプレイにフォーカスを移動する"""
+        output = subprocess.getoutput('yabai -m query --displays')
+        displays = json.loads(output)
+
+        if len(displays) <= 1:
+            return
+
+        # フォーカス中のディスプレイを特定
+        current_idx = 0
+        for i, disp in enumerate(displays):
+            if disp.get('has-focus'):
+                current_idx = i
+                break
+
+        # 次のディスプレイを選択
+        next_idx = (current_idx + 1) % len(displays)
+        next_display_id = displays[next_idx]['index']
+
+        # 次のディスプレイ上のウィンドウを見つけてフォーカス
+        for win_id, props in self.properties.items():
+            space_id = props.get('space')
+            space_output = subprocess.getoutput(f'yabai -m query --spaces --space {space_id}')
+            try:
+                space_info = json.loads(space_output)
+                if space_info.get('display') == next_display_id:
+                    subprocess.run(f'yabai -m window --focus {win_id}', shell=True)
+                    return
+            except json.JSONDecodeError:
+                continue
+
+    def focus_prev_display(self, *args):
+        """前のディスプレイにフォーカスを移動する"""
+        output = subprocess.getoutput('yabai -m query --displays')
+        displays = json.loads(output)
+
+        if len(displays) <= 1:
+            return
+
+        # フォーカス中のディスプレイを特定
+        current_idx = 0
+        for i, disp in enumerate(displays):
+            if disp.get('has-focus'):
+                current_idx = i
+                break
+
+        # 前のディスプレイを選択
+        prev_idx = (current_idx - 1) % len(displays)
+        prev_display_id = displays[prev_idx]['index']
+
+        # 前のディスプレイ上のウィンドウを見つけてフォーカス
+        for win_id, props in self.properties.items():
+            space_id = props.get('space')
+            space_output = subprocess.getoutput(f'yabai -m query --spaces --space {space_id}')
+            try:
+                space_info = json.loads(space_output)
+                if space_info.get('display') == prev_display_id:
+                    subprocess.run(f'yabai -m window --focus {win_id}', shell=True)
+                    return
+            except json.JSONDecodeError:
+                continue
+
 CMDTBL = [
     (r'^f', 'focus_next_window'),
     (r'^l', 'layout_all_windows'),
     (r'^t', 'tile_all_windows'),
     (r'^m', 'cb_maximize_window'),
     (r'^v', 'cb_maximize_window_vertically'),
+    (r'^sn|^space_next', 'focus_next_space'),
+    (r'^sp|^space_prev', 'focus_prev_space'),
+    (r'^dn|^display_next', 'focus_next_display'),
+    (r'^dp|^display_prev', 'focus_prev_display'),
 ]
 
 def main():
