@@ -122,12 +122,28 @@ class WindowManager():
 
         self.ignored_windows  = [w for w in self.properties.keys() if _is_ignored(w)]
         self.managed_windows  = [w for w in self.properties.keys() if not _is_ignored(w)]
+
+        # Get current space ID for filtering windows by virtual desktop
+        self.current_space_id = self._get_current_space_id()
+
         self.exposed_windows  = [
             w for w, elem in self.properties.items()
-            if elem.get('is-visible') and not _is_ignored(w)
+            if elem.get('is-visible')
+            and not _is_ignored(w)
+            and (self.current_space_id is None or elem.get('space') == self.current_space_id)
         ]
 
-        
+    def _get_current_space_id(self):
+        """Get the space ID of the currently focused virtual desktop."""
+        try:
+            output = subprocess.getoutput('yabai -m query --spaces --space')
+            if not output:
+                return None
+            space_info = json.loads(output)
+            return space_info.get('index')
+        except (json.JSONDecodeError, KeyError):
+            return None
+
     # ---------------- Yabai wrapper functions.
     def get_window_class(self, window):
         """Fetch the property of the window WINDOW and return the application
